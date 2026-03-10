@@ -31,13 +31,14 @@ print("=" * 50)
 print("\nInitializing optimized engine...")
 llm = llama_cpp.Llama(
     model_path=str(MODEL_PATH),
-    n_gpu_layers=1,
-    n_ctx=2048,
+    n_gpu_layers=35,
+    n_ctx=4096,
     n_threads=8,
-    n_batch=2048,
+    n_batch=512,
     verbose=False,
     use_mmap=True,
-    use_mlock=False,
+    use_mlock=True,
+    flash_attn=True,
 )
 
 print("Ready!\n")
@@ -99,8 +100,9 @@ async def info():
     return JSONResponse({
         "name": "BlitzKode",
         "creator": "Sajad",
-        "version": "1.0",
-        "status": "ready"
+        "version": "1.1",
+        "status": "ready",
+        "optimizations": ["35 GPU layers", "4096 ctx", "Flash Attention", "Memory locked"]
     })
 
 if __name__ == "__main__":
