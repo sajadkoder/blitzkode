@@ -6,12 +6,15 @@ Creator: Sajad
 
 import os
 import sys
+import time
 from pathlib import Path
+from typing import Optional
 import llama_cpp
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+import json
 
 # Paths
 BLITZKODE_DIR = Path("C:/Dev/Projects/BlitzKode")
@@ -29,6 +32,7 @@ print("=" * 50)
 
 # Load model with maximum optimization
 print("\nInitializing optimized engine...")
+start_time = time.time()
 llm = llama_cpp.Llama(
     model_path=str(MODEL_PATH),
     n_gpu_layers=35,
@@ -39,12 +43,14 @@ llm = llama_cpp.Llama(
     use_mmap=True,
     use_mlock=True,
     flash_attn=True,
+    tensor_split=[0.0],
+    seed=-1,
 )
-
-print("Ready!\n")
+load_time = time.time() - start_time
+print(f"Model loaded in {load_time:.2f}s\n")
 
 # FastAPI app
-app = FastAPI()
+app = FastAPI(title="BlitzKode API", version="1.2")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # Optimized system prompt - Creator attribution
@@ -67,12 +73,26 @@ Guidelines:
 async def root():
     return FileResponse(str(FRONTEND_PATH))
 
+@app.get("/health")
+async def health():
+    return JSONResponse({
+        "status": "healthy",
+        "model_loaded": True,
+        "version": "1.2"
+    })
+
 @app.post("/generate")
 async def generate(request: Request):
     data = await request.json()
     prompt = data.get("prompt", "")
-    temperature = data.get("temperature", 0.2)
-    max_tokens = data.get("max_tokens", 1024)
+    temperature = data.get("temperature", 0.3)
+    max_tokens = data.get("max_tokens", 2048)
+    top_p = data.get("top_p", 0.9)
+    top_k = data.get("top_k", 40)
+    repeat_penalty = data.get("repeat_penalty", 1.1)
+    
+    if not prompt:
+        return JSONResponse({"error": "Prompt is required"}, status_code=400)
     
     full_prompt = f"{SYSTEM_PROMPT}\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
     
@@ -80,9 +100,9 @@ async def generate(request: Request):
         full_prompt,
         max_tokens=max_tokens,
         temperature=temperature,
-        top_p=0.9,
-        top_k=40,
-        repeat_penalty=1.1,
+        top_p=top_p,
+        top_k=top_k,
+        repeat_penalty=repeat_penalty,
         frequency_penalty=0.0,
         presence_penalty=0.0,
         stop=["<|im_end|>", "<|im_start|>user"],
@@ -92,17 +112,71 @@ async def generate(request: Request):
     return JSONResponse({
         "response": response,
         "creator": "Sajad",
-        "model": "BlitzKode"
+        "model": "BlitzKode",
+        "version": "1.2"
     })
+
+@app.post("/generate/stream")
+async def generate_stream(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt", "")
+    temperature = data.get("temperature", 0.3)
+    max_tokens = data.get("max_tokens", 2048)
+    
+    if not prompt:
+        return JSONResponse({"error": "Prompt is required"}, status_code=400)
+    
+    full_prompt = f"{SYSTEM_PROMPT}\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+    
+    def generate_tokens():
+        for token in llm(
+            full_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            top_p=0.9,
+            top_k=40,
+            repeat_penalty=1.1,
+            frequency_penalty=0.0,
+            presence_penalty=0.0,
+            stop=["<|im_end|>", "<|im_start|>user"],
+            stream=True,
+        ):
+            if token.get("choices"):
+                text = token["choices"][0].get("text", "")
+                if text:
+                    yield f"data: {json.dumps({'token': text})}\n\n"
+        yield f"data: {json.dumps({'done': True})}\n\n"
+    
+    return StreamingResponse(
+        generate_tokens(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
 
 @app.get("/info")
 async def info():
     return JSONResponse({
         "name": "BlitzKode",
         "creator": "Sajad",
-        "version": "1.1",
+        "version": "1.2",
         "status": "ready",
-        "optimizations": ["35 GPU layers", "4096 ctx", "Flash Attention", "Memory locked"]
+        "optimizations": [
+            "35 GPU layers",
+            "4096 ctx",
+            "Flash Attention",
+            "Memory locked",
+            "Streaming support",
+            "Health endpoint"
+        ],
+        "endpoints": {
+            "generate": "POST /generate",
+            "stream": "POST /generate/stream",
+            "health": "GET /health",
+            "info": "GET /info"
+        }
     })
 
 if __name__ == "__main__":
