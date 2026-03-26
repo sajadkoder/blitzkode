@@ -35,15 +35,16 @@ print("\nInitializing optimized engine...")
 start_time = time.time()
 llm = llama_cpp.Llama(
     model_path=str(MODEL_PATH),
-    n_gpu_layers=35,
-    n_ctx=4096,
-    n_threads=8,
-    n_batch=512,
+    n_gpu_layers=33,
+    n_ctx=2048,
+    n_threads=4,
+    n_batch=256,
     verbose=False,
     use_mmap=True,
-    use_mlock=True,
-    flash_attn=True,
+    use_mlock=False,
+    flash_attn=False,
     seed=-1,
+    rope_scaling={"type": "linear", "factor": 0.5},
 )
 load_time = time.time() - start_time
 print(f"Model loaded in {load_time:.2f}s\n")
