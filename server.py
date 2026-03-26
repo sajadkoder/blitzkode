@@ -49,7 +49,7 @@ load_time = time.time() - start_time
 print(f"Model loaded in {load_time:.2f}s\n")
 
 # FastAPI app with config
-app = FastAPI(title="BlitzKode API", version="1.3")
+app = FastAPI(title="BlitzKode API", version="1.4")
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -93,7 +93,7 @@ async def health():
     return JSONResponse({
         "status": "healthy",
         "model_loaded": True,
-        "version": "1.3"
+        "version": "1.4"
     })
 
 @app.post("/generate")
@@ -128,9 +128,15 @@ async def generate(req: GenerateRequest, request: Request):
             "response": response,
             "creator": "Sajad",
             "model": "BlitzKode",
-            "version": "1.3"
+            "version": "1.4"
         })
     except Exception as e:
+        error_msg = str(e).lower()
+        if "image" in error_msg or "vision" in error_msg or " multimodal" in error_msg:
+            return JSONResponse({
+                "error": "This model does not support image input. Please use text only.",
+                "hint": "BlitzKode is a text-based coding assistant. It can help you write, debug, and explain code."
+            }, status_code=400)
         return JSONResponse({"error": str(e)}, status_code=500)
 
 @app.post("/generate/stream")
@@ -182,7 +188,7 @@ async def info():
     return JSONResponse({
         "name": "BlitzKode",
         "creator": "Sajad",
-        "version": "1.3",
+        "version": "1.4",
         "status": "ready",
         "optimizations": [
             "35 GPU layers",
