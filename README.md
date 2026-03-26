@@ -1,5 +1,9 @@
 # BlitzKode
 
+<p align="center">
+  <img src="Screenshot 2026-03-26 122611.png" alt="BlitzKode UI" width="800"/>
+</p>
+
 An AI-powered coding assistant built by **Sajad** using fine-tuned LLM technology.
 
 ## Features
@@ -14,10 +18,12 @@ An AI-powered coding assistant built by **Sajad** using fine-tuned LLM technolog
 
 ## Tech Stack
 
-- **Model**: Qwen2.5-1.5B (fine-tuned)
-- **Backend**: Python + llama.cpp + FastAPI
-- **Frontend**: Vanilla HTML/CSS/JS
-- **Training**: HuggingFace Transformers + PEFT (LoRA)
+| Component | Technology |
+|-----------|------------|
+| Model | Qwen2.5-1.5B (fine-tuned) |
+| Backend | Python + llama.cpp + FastAPI |
+| Frontend | Vanilla HTML/CSS/JS |
+| Training | HuggingFace Transformers + PEFT (LoRA) |
 
 ## Quick Start
 
@@ -59,14 +65,12 @@ curl -X POST http://localhost:7860/generate/stream \
 ```
 BlitzKode/
 ├── server.py              # Main backend server
-├── blitzkode.gguf        # Quantized model
+├── blitzkode.gguf         # Quantized model (3GB)
 ├── frontend/
-│   └── index.html       # Web interface
-├── scripts/
-│   ├── train_max.py     # Training pipeline
-│   ├── export_gguf.py   # Model export
-│   └── ...
-└── checkpoints/         # Trained model checkpoints
+│   └── index.html        # Web interface
+├── Screenshot*.png        # UI screenshots
+├── scripts/              # Training & export scripts
+└── checkpoints/          # Trained model checkpoints
 ```
 
 ## System Prompt
@@ -76,19 +80,16 @@ BlitzKode is configured with the following traits:
 - Clean, efficient code with comments
 - Concise explanations
 - Practical solutions
-- Created by Sajad
 
-## Performance Optimizations
+## Performance
 
-- 35 GPU layers
-- 4096 context window
-- Flash Attention
-- Memory locking
-- GZip compression
+- **Model**: 1.5B parameters (quantized GGUF)
+- **Context**: 2048 tokens
+- **Mode**: CPU optimized inference
 
 ## Version
 
-Current version: **1.3**
+Current version: **1.6**
 
 ## Creator
 
