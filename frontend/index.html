@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="BlitzKode - AI Coding Assistant by Sajad">
     <title>BlitzKode</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2310a37f' rx='12' width='100' height='100'/><text y='.9em' x='50%' text-anchor='middle' font-size='70'>⚡</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2310a37f' rx='12' width='100' height='100'/><text y='.9em' x='50%25' text-anchor='middle' font-size='70'>&amp;#9889;</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
@@ -247,6 +247,15 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        .model-status.offline {
+            color: #ef4444;
+        }
+
+        .model-status.offline .status-dot {
+            background: #ef4444;
+            animation: none;
         }
 
         .status-dot {
@@ -594,7 +603,7 @@
                     </button>
                     <span class="model-name">BlitzKode</span>
                 </div>
-                <span class="model-status"><span class="status-dot"></span> Online</span>
+                <span class="model-status" id="modelStatus"><span class="status-dot"></span> Checking</span>
             </div>
             <div class="chat" id="chat">
                 <div class="empty" id="empty">
@@ -627,6 +636,28 @@
         var sidebar = document.getElementById('sidebar');
         var sidebarOverlay = document.getElementById('sidebarOverlay');
         var main = document.getElementById('main');
+        var modelStatus = document.getElementById('modelStatus');
+
+        async function refreshStatus() {
+            try {
+                var res = await fetch('/health');
+                if (!res.ok) {
+                    throw new Error('Health check failed');
+                }
+
+                var data = await res.json();
+                if (data.status === 'healthy' && data.model_exists) {
+                    modelStatus.classList.remove('offline');
+                    modelStatus.innerHTML = '<span class="status-dot"></span> Ready';
+                } else {
+                    modelStatus.classList.add('offline');
+                    modelStatus.innerHTML = '<span class="status-dot"></span> Model missing';
+                }
+            } catch (e) {
+                modelStatus.classList.add('offline');
+                modelStatus.innerHTML = '<span class="status-dot"></span> Unavailable';
+            }
+        }
 
         function openSidebar() {
             sidebar.classList.add('open');
@@ -762,6 +793,7 @@
                 assistantDiv.querySelector('.message-content').innerHTML = formatContent(data.response);
             } catch (e) {
                 assistantDiv.querySelector('.message-content').innerHTML = '<p style="color: #ef4444;">Error: ' + escapeHtml(e.message) + '</p>';
+                refreshStatus();
             }
 
             sendBtn.disabled = false;
@@ -769,6 +801,8 @@
             chat.scrollTop = chat.scrollHeight;
             isSending = false;
         }
+
+        refreshStatus();
     </script>
 </body>
 </html>
