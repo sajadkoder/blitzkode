@@ -89,7 +89,7 @@ BlitzKode is configured with the following traits:
 
 ## Version
 
-Current version: **1.6**
+Current version: **1.0**
 
 ## Creator
 
